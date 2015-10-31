@@ -1,6 +1,8 @@
 "use strict";
 
 const PORT = process.env.PORT || 3000;
+var request = require('request');
+var bodyParser = require('body-parser');
 var express = require('express');
 var app = express();
 var OAuth2 = require('oauth').OAuth2;
@@ -12,6 +14,8 @@ var oauth2 = new OAuth2(
   'login/oauth/access_token',   // provider's access_token path
   null                          // options
 );
+
+app.use(bodyParser.urlencoded({ extended: true }));
 
 app.get('/', (req, res) => {
   res.json({ status: 200 });
@@ -29,7 +33,7 @@ app.get('/auth/login', (req, res) => {
   res.json({ url: authURL });    // state variable prevents cross-site forgery;
 });
 
-// Step 3: set the callback route that's called after authorization; provider returns access code as as query string;
+// Step 3: create the callback route that's called after authorization; provider returns access code as as query string;
 app.get('/auth/github/callback', (req, res) => {
   var code = req.query.code;
   if (!code)
@@ -50,6 +54,37 @@ app.get('/auth/github/callback', (req, res) => {
       }
     });
 });
+
+// Step 4: create route to support desired API's; Bearer Access Token is stored in the header as: Authorization : Bearer access_token
+app.post('/gists', getAuthBearerToken, (req, res) => {
+  request.post({
+    url: 'https://api.github.com/gists',
+    json: true,
+    headers: { Authorization: 'Bearer ' + req.access_token },
+    body: {
+      description: req.body.description,
+      public: true,
+      files: req.body.files
+    }},
+    (err, response, body) => {
+      if (err)
+        return res.status(500).json(err);
+      res.json(body);
+    }
+  );
+});
+
+function getAuthBearerToken(req, res, next) {
+  if (req.headers.hasOwnProperty('Authorization')) {
+    return res.status(401).json({ error: 401, message: 'Bearer auth token not found' });
+  }
+  var auth_header = req.headers.authorization;
+  var auth_header_value = auth_header.split(' ');
+  if (auth_header_value.length != 2)
+    return res.status(401).json({ error: 401, message: 'Authorization header is malformed' });
+  req.access_token = auth_header_value[1];
+  next();   // MUST ALWAYS CALL next();
+}
 
 app.listen(PORT, () => {
   console.log('API is now listening on: ', PORT);
