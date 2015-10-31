@@ -13,7 +13,7 @@ var oauth2 = new OAuth2(
   null                          // options
 );
 
-// Step 1: demo .env file to set process.env values for node; MUST add .env to .gitignore to protect info;
+// Step 1: demo .env file to set process.env values for node; MUST add .env to .gitignore for security!
 
 // Step 2: use oauth2 to get the provider's auth url;
 router.get('/login', (req, res) => {
