@@ -60,11 +60,11 @@ app.post('/gists', getAuthBearerToken, (req, res) => {
   request.post({
     url: 'https://api.github.com/gists',
     json: true,
-    headers: { Authorization: 'Bearer ' + req.access_token },
+    headers: { Authorization: 'Bearer ' + req.access_token, 'User-Agent': 'oauth_demo-dev' },
     body: {
       description: req.body.description,
       public: true,
-      files: req.body.files
+      files: JSON.parse(req.body.files)   // keys & values must both be double quoted;
     }},
     (err, response, body) => {
       if (err)
