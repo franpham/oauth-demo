@@ -55,7 +55,7 @@ app.get('/auth/github/callback', (req, res) => {
     });
 });
 
-// Step 4: create route to support desired API's; Bearer Access Token is stored in the header as: Authorization : Bearer access_token
+// Step 4: create route to post new object; Bearer Access Token is stored in the header as: Authorization : Bearer access_token
 app.post('/gists', getAuthBearerToken, (req, res) => {
   request.post({
     url: 'https://api.github.com/gists',
@@ -65,13 +65,27 @@ app.post('/gists', getAuthBearerToken, (req, res) => {
       description: req.body.description,
       public: true,
       files: JSON.parse(req.body.files)   // keys & values must both be double quoted;
-    }},
-    (err, response, body) => {
-      if (err)
-        return res.status(500).json(err);
-      res.json(body);
     }
-  );
+  },
+  (err, response, body) => {
+    if (err)
+      return res.status(500).json(err);
+    res.json(body);
+  });
+});
+
+// Step 5: create route to get object with id;
+app.get('/gists/:id', getAuthBearerToken, (req, res) => {
+  request.get({
+    url: 'https://api.github.com/gists/' + req.params.id,
+    json: true,
+    headers: { Authorization: 'Bearer ' + req.access_token, 'User-Agent': 'oauth_demo-dev' }
+  },
+  (err, response, body) => {
+    if (err)
+      return res.status(500).json(err);
+    res.json(body);
+  });
 });
 
 function getAuthBearerToken(req, res, next) {
